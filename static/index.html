@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>She's Ameya</title>
+    <style>
+        body { font-family: Arial; max-width: 600px; margin: 2rem auto; }
+        textarea, button { width: 100%; margin: 1rem 0; padding: 10px; }
+        #response { padding: 1rem; background: #eee; border-radius: 5px; white-space: pre-wrap; }
+    </style>
+    <!-- Include marked.js from CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+    <h2>She's Ameya</h2>
+    <p style="font-size: 0.9em; font-style: italic; margin-top: -10px; margin-left: 10px;">
+        – For every woman becoming her limitless self.
+      </p>
+    <textarea id="message" rows="4" placeholder="Tell me what’s on your mind…"></textarea>
+    <button onclick="sendMessage()">Send</button>
+    <div id="response"></div>
+
+    <script>
+        async function sendMessage() {
+        const message = document.getElementById('message').value;
+        document.getElementById('response').innerText = "Thinking...";
+
+        try {
+            // Get user's public IP first
+            const ipRes = await fetch("https://api.ipify.org?format=json");
+            const ipData = await ipRes.json();
+            const ip = ipData.ip;
+
+            // Send message + IP to backend
+            const res = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message, ip })
+            });
+
+            const data = await res.json();
+            document.getElementById('response').innerHTML = data.reply ? marked.parse(data.reply) : "No response.";
+        } catch (e) {
+            document.getElementById('response').innerText = "Error: " + e.message;
+        }
+    }
+    </script>
+</body>
+</html>
