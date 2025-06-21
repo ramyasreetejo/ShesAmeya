@@ -11,6 +11,8 @@ Instead, Ameya dynamically:
 
 She supports concerns across **health**, **education**, and **career** — with real country-specific insights, not global generalizations.
 
+Explore the dataset: https://genderdata.worldbank.org/en/home
+
 ---
 
 ## Sample Interactions
