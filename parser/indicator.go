@@ -1,21 +1,11 @@
-package main
+package parser
 
-import (
-	"encoding/csv"
-	"fmt"
-	"log"
-	"os"
-	"sort"
-	"strconv"
-	"strings"
-)
+import "strings"
 
-// Match phrases to indicator
-func matchIndicator(input string) string {
+func MatchIndicator(input string) string {
 	input = strings.ToLower(input)
-
 	switch {
-	// --- EDUCATION ---
+	// --- EDUCATION & CAREER ---
 	case strings.Contains(input, "tech") ||
 		strings.Contains(input, "ict") ||
 		strings.Contains(input, "computer science") ||
@@ -59,91 +49,30 @@ func matchIndicator(input string) string {
 	case strings.Contains(input, "life expectancy") || strings.Contains(input, "live longer"):
 		return "Life expectancy at birth, female (years)"
 
-	case strings.Contains(input, "ict") || strings.Contains(input, "tech"):
-		return "Female share of graduates from Information and Communication Technologies programmes, tertiary (%)"
-
 	// --- DEFAULT ---
 	default:
 		return ""
 	}
 }
 
-// Parse CSV and return trend
-func getCountryTrend(filename, indicatorName, country string) map[string]float64 {
-	file, err := os.Open(filename)
-	if err != nil {
-		log.Fatal(err)
+func ExtractTopicAndQuery(input string) (string, string) {
+	switch {
+	case strings.HasPrefix(input, "/health "):
+		return "health", strings.TrimPrefix(input, "/health ")
+	case strings.HasPrefix(input, "/career "):
+		return "career", strings.TrimPrefix(input, "/career ")
+	case strings.HasPrefix(input, "/education "):
+		return "education", strings.TrimPrefix(input, "/education ")
+	default:
+		return "general", input
 	}
-	defer file.Close()
-
-	reader := csv.NewReader(file)
-	records, err := reader.ReadAll()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	header := records[0]
-	idxCountry, idxIndicator, idxYear, idxValue := -1, -1, -1, -1
-
-	for i, h := range header {
-		switch h {
-		case "Country Name":
-			idxCountry = i
-		case "Indicator Name":
-			idxIndicator = i
-		case "Year":
-			idxYear = i
-		case "Value":
-			idxValue = i
-		}
-	}
-
-	trend := make(map[string]float64)
-
-	for _, row := range records[1:] {
-		if row[idxCountry] != country || row[idxIndicator] != indicatorName {
-			continue
-		}
-		year := row[idxYear]
-		val, err := strconv.ParseFloat(row[idxValue], 64)
-		if err != nil {
-			continue
-		}
-		trend[year] = val
-	}
-
-	return trend
 }
 
-// Build natural prompt for Gemini
-func buildPrompt(country, indicator string, trend map[string]float64, userContext string) string {
-	fmt.Println(trend)
-	safeIndicator := strings.ReplaceAll(indicator, "%", "%%")
-	return fmt.Sprintf(`
-%s
-
-Use the following indicator to provide a response:
-Indicator: %s
-
-Data for %s:
-
-Trend: %s
-
-Based on the indicator and trend, generate a helpful and empathetic response including stats and data insights that we are passing as Trend.
-`, userContext, safeIndicator, country, formatTrendData(trend))
-}
-
-// Sort & format map as string
-func formatTrendData(trend map[string]float64) string {
-	years := make([]string, 0, len(trend))
-	for year := range trend {
-		years = append(years, year)
+func PromptForTopic(topic, query string) string {
+	prompts := map[string]string{
+		"health":    "You are a supportive assistant for women's health. User's concern: %s",
+		"career":    "You are a career coach for women. User's concern: %s",
+		"education": "You are an educational motivator for women. User's concern: %s",
 	}
-	sort.Strings(years)
-
-	var sb strings.Builder
-	for _, year := range years {
-		sb.WriteString(fmt.Sprintf("%s: %.1f\n", year, trend[year]))
-	}
-	return sb.String()
+	return strings.Replace(prompts[topic], "%s", query, 1)
 }
