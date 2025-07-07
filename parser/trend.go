@@ -17,7 +17,7 @@ func GetCountryTrend(file, indicator, country string) map[string]float64 {
 
 	idx := map[string]int{}
 	for i, h := range rows[0] {
-		idx[h] = i
+		idx[h] = i //idx[indicatorName]=0, idx[countryName]=1, idx[year]=2, idx[value]=3
 	}
 
 	trend := map[string]float64{}
@@ -27,7 +27,7 @@ func GetCountryTrend(file, indicator, country string) map[string]float64 {
 			trend[row[idx["Year"]]] = val
 		}
 	}
-	return trend
+	return trend //trend[2018]=1.2, trend[2019]=1.5, ...
 }
 
 func BuildTrendPrompt(country, indicator string, trend map[string]float64, base string) string {
@@ -46,9 +46,11 @@ func BuildTrendPrompt(country, indicator string, trend map[string]float64, base 
 
 	Refer to the data as retrieved by you (the assistant), not provided by the user.
 
-	Make the data look structured (bullets and hyphens etc) and not like para when giving output!
+	Make the data look structured in a paragraph when giving output!
 
-	When presenting data trends, format them as a simple list with no nested bullets. Avoid excessive indentation or Markdown nesting.
+	Avoid excessive indentation or Markdown nesting.
+
+	Use empathy and understanding in your response, acknowledging the user's situation and providing insights based on the data.
 
 	`, base, indicator, country, formatTrend(trend))
 }
